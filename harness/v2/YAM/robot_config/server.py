@@ -64,6 +64,15 @@ class YamSession:
         self.port = int(config.pop("port", 18761))
         self.max_joint_step_rad = float(config.pop("max_joint_step_rad", 0.05))
         self.max_gripper_step = float(config.pop("max_gripper_step", 0.1))
+        self.start_from_current_pose = config.pop("start_from_current_pose", False)
+        if not isinstance(self.start_from_current_pose, bool):
+            raise ValueError("start_from_current_pose must be true or false")
+        if self.start_from_current_pose and (
+            config.get("home_pose") is not None or config.get("start_pose") is not None
+        ):
+            raise ValueError(
+                "start_from_current_pose cannot be combined with home_pose or start_pose"
+            )
         if self.host != "127.0.0.1" and self.host != "localhost":
             raise ValueError("YAM session server must bind to loopback only")
         if not 0 < self.max_joint_step_rad <= 0.2:
@@ -79,8 +88,30 @@ class YamSession:
 
         from inspect_robots_yam import YAMEmbodiment, YamConfig
 
+        class _CurrentPoseEmbodiment(YAMEmbodiment):
+            """Use measured startup joints as the reset target when requested."""
+
+            def _home_pose(inner_self: Any) -> np.ndarray:
+                if not self.start_from_current_pose:
+                    return super(_CurrentPoseEmbodiment, inner_self)._home_pose()
+                pose = getattr(inner_self, "_init_pose", None)
+                if pose is None:
+                    raise RuntimeError("cannot use current-pose startup before reading joint state")
+                measured = np.asarray(pose, dtype=np.float64).copy()
+                low = np.asarray(inner_self._cfg.low, dtype=np.float64)
+                high = np.asarray(inner_self._cfg.high, dtype=np.float64)
+                if measured.shape != (14,) or not np.all(np.isfinite(measured)):
+                    raise RuntimeError("current startup joint state is invalid")
+                outside = np.flatnonzero((measured < low) | (measured > high))
+                if outside.size:
+                    raise RuntimeError(
+                        "current startup pose exceeds configured joint bounds at packed "
+                        f"indices {outside.tolist()}; refusing startup movement"
+                    )
+                return measured
+
         self._config = YamConfig.from_kwargs(**config)
-        self._embodiment = YAMEmbodiment(self._config)
+        self._embodiment = _CurrentPoseEmbodiment(self._config)
         self._lock = threading.RLock()
         self._active = False
         self._closed = False
@@ -106,10 +137,14 @@ class YamSession:
     def start(self, instruction: str) -> dict[str, Any]:
         if not instruction.strip():
             raise ValueError("instruction must not be empty")
-        if self._config.home_pose is None and self._config.start_pose is None:
+        if (
+            self._config.home_pose is None
+            and self._config.start_pose is None
+            and not self.start_from_current_pose
+        ):
             raise ValueError(
-                "set a measured 14-value home_pose or a captured start_pose in the local "
-                "config before start; the adapter's zero pose is not assumed safe for this rig"
+                "set start_from_current_pose=true, a measured 14-value home_pose, or a "
+                "captured start_pose before start; the adapter's zero pose is not assumed safe"
             )
         with self._lock:
             if self._active:

@@ -5,10 +5,11 @@ robot. The supported path uses the `inspect-robots-yam` embodiment and its
 I2RT driver; do not call I2RT directly or bypass that embodiment.
 
 The local service binds only to `127.0.0.1`. It does not connect or move the
-arms until `tools/robot.py start` is called. Start/reset requires an explicit
-14-value `home_pose`, then uses the embodiment's operator readiness gate and
-ramps to that pose. Keep an operator at the e-stop and make sure the workspace
-is clear before starting.
+arms until `tools/robot.py start` is called. Start/reset requires either an
+explicit pose or `start_from_current_pose=true`; the latter captures measured
+joint feedback as the reset target and refuses startup if it is out of bounds.
+Reset still uses the embodiment's operator readiness gate. Keep an operator at
+the e-stop and make sure the workspace is clear before starting.
 
 Use `tools/robot.py observe` to inspect the latest camera images and packed
 joint state. Before every move, inspect fresh camera evidence and the current

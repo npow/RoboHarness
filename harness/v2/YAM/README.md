@@ -33,18 +33,24 @@ cp robot_config/config.example.json .runtime/config.json
 Edit `.runtime/config.json` with both CAN channels and exactly one source for
 each camera slot. A slot can use a stable `*_cam_device` path (V4L2) or a
 `*_depth_serial` (RealSense). The example intentionally contains no hardware
-addresses. Keep this file local; it is ignored by Git. Before starting, set
-either `home_pose` to the rig's measured, known-safe 14-value pose or
-`start_pose` to a captured named pose (stored under `pose_dir`). The server
-refuses to start without one; the adapter's all-zero default is not assumed
-safe. To capture a named pose, an operator must be physically at the robot,
-support both arms, and follow the adapter prompts:
+addresses. Keep this file local; it is ignored by Git. If the robot's current
+pose is the desired start pose, set `start_from_current_pose` to `true`. At
+session start, the server reads current joint feedback, checks it against the
+configured limits, and uses that same pose as the reset target. It refuses to
+start if feedback is outside those bounds. Alternatively, set `home_pose` to
+a measured 14-value pose or `start_pose` to a captured named pose. These
+options are mutually exclusive. The adapter's all-zero default is not
+assumed safe.
+
+To capture a different named pose, an operator must be physically at the
+robot, support both arms, and follow the adapter prompts:
 
 ```bash
 "${YAM_PYTHON:-.venv/bin/python}" -m inspect_robots_yam.pose_cli --pose-dir .runtime/poses capture yam-safe-home
 ```
 
-Then set `start_pose` to `yam-safe-home` and keep `home_pose` null.
+Then set `start_pose` to `yam-safe-home` and keep `home_pose` null and
+`start_from_current_pose` false.
 `rest_pose: null` returns to the pose measured when the session starts during
 an explicit normal `close`.
 
