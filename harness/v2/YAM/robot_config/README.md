@@ -41,8 +41,8 @@ The service process starts idle and does not create the I2RT connection.
 `start` explicitly calls the embodiment's `reset`, which connects the arms,
 checks the configured cameras, runs the operator readiness gate, and ramps to
 the configured home/start pose. The adapter's default home is all-zero joints
-with open grippers; configure and verify a rig-appropriate `home_pose` before
-starting. Set `rest_pose: null` to return to the pose captured before homing
+with open grippers; configure and verify a rig-appropriate `home_pose` or
+captured named `start_pose` before starting. Set `rest_pose: null` to return to the pose captured before homing
 when an operator explicitly closes a healthy session. `step` requires an
 active session. On a fault or process shutdown, the service releases the
 driver without commanding a park movement.

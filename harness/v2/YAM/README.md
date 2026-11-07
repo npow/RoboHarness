@@ -33,11 +33,20 @@ cp robot_config/config.example.json .runtime/config.json
 Edit `.runtime/config.json` with both CAN channels and exactly one source for
 each camera slot. A slot can use a stable `*_cam_device` path (V4L2) or a
 `*_depth_serial` (RealSense). The example intentionally contains no hardware
-addresses. Keep this file local; it is ignored by Git. Populate `home_pose`
-with the rig's measured, known-safe 14-value start pose before starting. The
-server refuses to start without it; the adapter's all-zero default is not
-assumed safe. `rest_pose: null` returns to the pose measured when the session
-starts during an explicit normal `close`.
+addresses. Keep this file local; it is ignored by Git. Before starting, set
+either `home_pose` to the rig's measured, known-safe 14-value pose or
+`start_pose` to a captured named pose (stored under `pose_dir`). The server
+refuses to start without one; the adapter's all-zero default is not assumed
+safe. To capture a named pose, an operator must be physically at the robot,
+support both arms, and follow the adapter prompts:
+
+```bash
+"${YAM_PYTHON:-.venv/bin/python}" -m inspect_robots_yam.pose_cli --pose-dir .runtime/poses capture yam-safe-home
+```
+
+Then set `start_pose` to `yam-safe-home` and keep `home_pose` null.
+`rest_pose: null` returns to the pose measured when the session starts during
+an explicit normal `close`.
 
 Before first use, follow the adapter's
 [preflight and hardware instructions](https://github.com/robocurve/inspect-robots-yam#preflight-prove-compatibility-before-any-motion).

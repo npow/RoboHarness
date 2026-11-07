@@ -106,10 +106,10 @@ class YamSession:
     def start(self, instruction: str) -> dict[str, Any]:
         if not instruction.strip():
             raise ValueError("instruction must not be empty")
-        if self._config.home_pose is None:
+        if self._config.home_pose is None and self._config.start_pose is None:
             raise ValueError(
-                "set an explicit 14-value home_pose in the local config before start; "
-                "the adapter's zero pose is not assumed safe for this rig"
+                "set a measured 14-value home_pose or a captured start_pose in the local "
+                "config before start; the adapter's zero pose is not assumed safe for this rig"
             )
         with self._lock:
             if self._active:

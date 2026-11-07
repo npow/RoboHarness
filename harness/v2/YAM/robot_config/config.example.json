@@ -10,6 +10,8 @@
   "right_depth_serial": null,
   "control_hz": 5.0,
   "home_pose": null,
+  "start_pose": null,
+  "pose_dir": ".runtime/poses",
   "rest_pose": null,
   "collision_guardrail": true,
   "motor_temp_limit": 70.0,
