@@ -9,14 +9,16 @@ commands, which the agent can also send directly.
 ```text
 harness/v2/
 ├── R1_pro/   # R1 Pro workspace for BEHAVIOR (27-value controller command)
-└── ARX_X5/   # dual ARX X5 workspace for RoboDojo (14 joint scalars)
+├── ARX_X5/   # dual ARX X5 workspace for RoboDojo (14 joint scalars)
+└── YAM/      # physical bimanual I2RT YAM workspace
 ```
 
-Each workspace is self-contained: `tools/NAME.py` holds a tool's algorithm,
-`tools/util/` the shared code, `robot_config/` the URDF, meshes and joint
-manuals, `skills/` the task skills, and `AGENTS.md` / `CLAUDE.md` the operating
-instructions. A workspace never imports code from outside its directory.
-Agents operate with ordinary shell and file access, for example
+The simulator workspaces are self-contained: `tools/NAME.py` holds a tool's
+algorithm, `tools/util/` the shared code, `robot_config/` the URDF, meshes and
+joint manuals, `skills/` the task skills, and `AGENTS.md` / `CLAUDE.md` the
+operating instructions. The physical YAM workspace uses the separately
+maintained `inspect-robots-yam` adapter for its hardware driver. Agents operate
+with ordinary shell and file access, for example
 `python tools/capture_head_camera.py '{}'`, so any coding agent can use it;
 `tools/util/launch.py` starts Claude Code with the workspace's image hooks.
 
@@ -66,6 +68,14 @@ the read-only [trajectory viewer](../../eval/viewer/behavior/README.md).
 [`eval/robodojo`](../../eval/robodojo/README.md) drives a private copy of
 `ARX_X5` with an existing RoboDojo checkout; set `ROBODOJO_ROOT` and
 `ROBODOJO_EVALUATOR_ENV` or pass `--robodojo` / `--evaluator-env`.
+
+## Physical bimanual YAM
+
+[`YAM/`](YAM/README.md) is a physical-robot workspace for the I2RT bimanual
+YAM. It uses the existing `inspect-robots-yam` embodiment and I2RT driver,
+with a persistent local control session so each agent action does not reconnect
+the arms. The workspace is separate from the BEHAVIOR and RoboDojo simulation
+runners; see its setup and operator instructions before connecting hardware.
 
 ## Tests
 

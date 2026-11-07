@@ -1,0 +1,18 @@
+{
+  "left_channel": "can0",
+  "right_channel": "can1",
+  "gripper_type": "LINEAR_4310",
+  "top_cam_device": null,
+  "left_cam_device": null,
+  "right_cam_device": null,
+  "top_depth_serial": null,
+  "left_depth_serial": null,
+  "right_depth_serial": null,
+  "control_hz": 5.0,
+  "collision_guardrail": true,
+  "motor_temp_limit": 70.0,
+  "max_joint_step_rad": 0.05,
+  "max_gripper_step": 0.1,
+  "host": "127.0.0.1",
+  "port": 18761
+}
