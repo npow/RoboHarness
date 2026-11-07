@@ -106,6 +106,11 @@ class YamSession:
     def start(self, instruction: str) -> dict[str, Any]:
         if not instruction.strip():
             raise ValueError("instruction must not be empty")
+        if self._config.home_pose is None:
+            raise ValueError(
+                "set an explicit 14-value home_pose in the local config before start; "
+                "the adapter's zero pose is not assumed safe for this rig"
+            )
         with self._lock:
             if self._active:
                 raise RuntimeError("session is already active")
@@ -127,9 +132,10 @@ class YamSession:
                 observation = _observation_payload(obs, self._sequence)
             except Exception:
                 # A failed reset may have connected one or both arms before a
-                # camera/operator/runtime error. Run the adapter teardown and
-                # require a fresh service process before another attempt.
+                # camera/operator/runtime error. Release the driver in place;
+                # do not command a park pose while handling a fault.
                 try:
+                    self._embodiment._init_pose = None
                     self._embodiment.close()
                 except Exception:
                     logging.exception("YAM teardown after failed start also failed")
@@ -200,12 +206,26 @@ class YamSession:
                 return self.status()
             try:
                 if self._connected:
+                    if self._fault:
+                        self._embodiment._init_pose = None
                     self._embodiment.close()
             finally:
                 self._active = False
                 self._connected = False
                 self._closed = True
             return self.status()
+
+    def shutdown(self) -> None:
+        """Release driver handles without commanding motion on process exit."""
+        with self._lock:
+            try:
+                if self._connected:
+                    self._embodiment._init_pose = None
+                    self._embodiment.close()
+            finally:
+                self._active = False
+                self._connected = False
+                self._closed = True
 
 
 def main() -> None:
@@ -275,7 +295,7 @@ def main() -> None:
         pass
     finally:
         try:
-            session.close()
+            session.shutdown()
         finally:
             server.server_close()
 

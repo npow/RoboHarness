@@ -14,9 +14,15 @@ No driver connection or motion occurs until the operator explicitly runs the
 
 ## Install
 
-Use Linux x86-64 with Python 3.11, `uv`, the I2RT YAM arms, and the configured
-top, left-wrist, and right-wrist cameras. The driver is installed from its
-upstream Git repository; this workspace does not vendor or replace it.
+Use Linux with Python, `uv`, the I2RT YAM arms, and the configured top,
+left-wrist, and right-wrist cameras. `setup.sh` creates a Python 3.11
+environment and installs pinned adapter/driver revisions. On a host with a
+working YAM environment already installed, reuse that interpreter instead of
+installing a second copy of I2RT:
+
+```bash
+export YAM_PYTHON="$HOME/code/molmoact2/.venv/bin/python"
+```
 
 ```bash
 cd harness/v2/YAM
@@ -27,7 +33,11 @@ cp robot_config/config.example.json .runtime/config.json
 Edit `.runtime/config.json` with both CAN channels and exactly one source for
 each camera slot. A slot can use a stable `*_cam_device` path (V4L2) or a
 `*_depth_serial` (RealSense). The example intentionally contains no hardware
-addresses. Keep this file local; it is ignored by Git.
+addresses. Keep this file local; it is ignored by Git. Populate `home_pose`
+with the rig's measured, known-safe 14-value start pose before starting. The
+server refuses to start without it; the adapter's all-zero default is not
+assumed safe. `rest_pose: null` returns to the pose measured when the session
+starts during an explicit normal `close`.
 
 Before first use, follow the adapter's
 [preflight and hardware instructions](https://github.com/robocurve/inspect-robots-yam#preflight-prove-compatibility-before-any-motion).
@@ -41,27 +51,29 @@ Use two terminals in this directory. Terminal 1 starts the local service; it
 does not connect to hardware yet:
 
 ```bash
-.venv/bin/python robot_config/server.py --config .runtime/config.json
+"${YAM_PYTHON:-.venv/bin/python}" robot_config/server.py --config .runtime/config.json
 ```
 
 Terminal 2 explicitly connects, waits for the embodiment's operator readiness
 gate, and ramps to its configured start pose:
 
 ```bash
-.venv/bin/python tools/robot.py start --instruction "Move the object to the tray"
+"${YAM_PYTHON:-.venv/bin/python}" tools/robot.py start --instruction "Move the object to the tray"
 ```
 
 The reset/home ramp can move both arms. Clear the workcell, keep the operator
-at the e-stop, and confirm the robot's start pose is appropriate for this rig
-before accepting the readiness prompt. The driver is connected only once for
-the session.
+at the e-stop, and confirm the configured home pose is appropriate for this
+rig before accepting the readiness prompt. The driver is connected only once
+for the session. `close` on a healthy session parks to the captured initial
+pose; process shutdown or a fault releases the driver without commanding a
+motion.
 
 ## Agent tools
 
 ```bash
-.venv/bin/python tools/robot.py observe
-.venv/bin/python tools/robot.py step --action '[0,0,0,0,0,0,1,0,0,0,0,0,0,1]'
-.venv/bin/python tools/robot.py close
+"${YAM_PYTHON:-.venv/bin/python}" tools/robot.py observe
+"${YAM_PYTHON:-.venv/bin/python}" tools/robot.py step --action '[0,0,0,0,0,0,1,0,0,0,0,0,0,1]'
+"${YAM_PYTHON:-.venv/bin/python}" tools/robot.py close
 ```
 
 The action is an absolute 14-value vector in this order:

@@ -9,10 +9,12 @@
   "left_depth_serial": null,
   "right_depth_serial": null,
   "control_hz": 5.0,
+  "home_pose": null,
+  "rest_pose": null,
   "collision_guardrail": true,
   "motor_temp_limit": 70.0,
   "max_joint_step_rad": 0.05,
-  "max_gripper_step": 0.1,
+  "max_gripper_step": 0.025,
   "host": "127.0.0.1",
   "port": 18761
 }
